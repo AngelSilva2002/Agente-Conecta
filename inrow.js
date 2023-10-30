@@ -189,9 +189,38 @@ class realTamaero extends Agent {
     }
 
     evaluate(board) {
-        // Evaluar el tablero aquí (implementar una función de evaluación adecuada)
-        // Devuelve un valor más alto si es un estado favorable para el jugador y un valor más bajo si es desfavorable.
-        return 0; // Implementa tu evaluación aquí
+        const playerColor = this.color;
+        const opponentColor = this.opponentColor();
+    
+        let playerScore = 0;
+        let opponentScore = 0;
+    
+        // Evaluate the board by counting pieces and their positions
+        for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+                const cell = board[i][j];
+                if (cell === playerColor) {
+                    playerScore += this.evaluateCell(i, j, playerColor);
+                } else if (cell === opponentColor) {
+                    opponentScore += this.evaluateCell(i, j, opponentColor);
+                }
+            }
+        }
+    
+        // Return the difference in scores as the evaluation
+        return playerScore - opponentScore;
+    }
+    
+    evaluateCell(row, col, color) {
+        // Example: Assign higher values to center positions
+        const centerRow = Math.floor(this.size / 2);
+        const centerCol = Math.floor(this.size / 2);
+    
+        // Calculate a simple score based on the distance from the center
+        const distance = Math.abs(row - centerRow) + Math.abs(col - centerCol);
+    
+        // Assign a higher score to pieces closer to the center
+        return color === this.color ? distance : -distance;
     }
 
     opponentColor() {
