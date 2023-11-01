@@ -154,8 +154,24 @@ class realTamaero extends Agent {
     compute(board, time) {
         const k = parseInt(Konekti.vc('k').value);
         const moves = this.board.valid_moves(board);
-        const bestMove = this.minimax(board, 4, true, k);
+        const depth = this.determineDepth(moves.length, time);
+        const bestMove = this.minimax(board, depth, true, k);
         return bestMove;
+    }
+
+    determineDepth(numMoves, time) {
+        // Establece reglas para determinar la profundidad dinámica basada en el tiempo y la cantidad de movimientos disponibles.
+        const maxDepth = 10; // Profundidad máxima permitida
+        const maxTime = 10000; // Tiempo máximo para la decisión en milisegundos
+        const minDepth = 3; // Profundidad mínima para asegurar una decisión razonable
+
+        if (time > maxTime) {
+            return maxDepth;
+        }
+
+        // Ajusta la profundidad en función del tiempo y la cantidad de movimientos disponibles.
+        const dynamicDepth = Math.max(minDepth, Math.floor(maxDepth * (time / maxTime) * (numMoves / 42)));
+        return dynamicDepth;
     }
 
     minimax(board, depth, maximizing, k) {
@@ -189,7 +205,6 @@ class realTamaero extends Agent {
 
     evaluate(board) {
         var k = parseInt(Konekti.vc('k').value) // k-pieces in row
-        console.log("piesas: " + k)
         const playerColor = this.color;
         const opponentColor = this.opponentColor();
         let playerScore = 0;
@@ -202,13 +217,24 @@ class realTamaero extends Agent {
         opponentScore += this.countConsecutivePieces(board, opponentColor, k);
     
         // Evaluar el bloqueo del oponente
-        playerScore += this.blockOpponent(board, opponentColor, k);
+        playerScore += this.blockOpponent(board,playerColor, opponentColor, k);
+        //opponentScore += this.blockOpponent(board,opponentColor, playerColor, k);
     
         // Devolver la diferencia en puntuaciones como la evaluación
         //console.log("score player = " + playerScore)
         //console.log("score opponent = " + opponentScore)
+
+        playerScore += this.evaluateControlCenter(board, playerColor);
+        playerScore += this.evaluateCornerOccupation(board, playerColor);
+
+        opponentScore += this.evaluateControlCenter(board, opponentColor);
+        opponentScore += this.evaluateCornerOccupation(board,   opponentColor);
+
+        
         return playerScore - opponentScore;
     }
+
+
 
     connectKInLine(board, playerColor, k) {
         let playerScore = 0;
@@ -355,6 +381,7 @@ class realTamaero extends Agent {
         return playerScore;
     }
     
+    /*
     // Función para evaluar el bloqueo del oponente
     blockOpponent(board, opponentColor, k) {
         let playerScore = 0;
@@ -372,7 +399,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; 
+                    playerScore += 10; 
                 }
             }
         }
@@ -390,7 +417,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1;
+                    playerScore += 10;
                 }
             }
         }
@@ -408,7 +435,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; 
+                    playerScore += 10; 
                 }
             }
         }
@@ -426,11 +453,151 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; 
+                    playerScore += 10; 
                 }
             }
         }
     
+        return playerScore;
+    }*/
+
+    blockOpponent(board, playerColor, opponentColor, k) {
+        let playerScore = 0;
+    
+        // Evaluar líneas horizontales
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Verificar si esta jugada bloquea una victoria del oponente
+                    if (this.isBlockingMove(board, row, col, k, 'horizontal', playerColor)) {
+                        playerScore += 100; // Incrementa el puntaje
+                    }
+                }
+            }
+        }
+    
+        // Evaluar líneas verticales
+        for (let col = 0; col < this.size; col++) {
+            for (let row = 0; row <= this.size - k; row++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Verificar si esta jugada bloquea una victoria del oponente
+                    if (this.isBlockingMove(board, row, col, k, 'vertical', playerColor)) {
+                        playerScore += 100; // Incrementa el puntaje
+                    }
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales descendentes
+        for (let row = 0; row <= this.size - k; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Verificar si esta jugada bloquea una victoria del oponente
+                    if (this.isBlockingMove(board, row, col, k, 'diagonal-descendente', playerColor)) {
+                        playerScore += 100; // Incrementa el puntaje
+                    }
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales ascendentes
+        for (let row = k - 1; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row - i][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row - i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Verificar si esta jugada bloquea una victoria del oponente
+                    if (this.isBlockingMove(board, row, col, k, 'diagonal-ascendente', playerColor)) {
+                        playerScore += 100; // Incrementa el puntaje
+                    }
+                }
+            }
+        }
+    
+        return playerScore;
+    }
+    
+    isBlockingMove(board, row, col, k, direction, playerColor) {
+        // Verificar si la jugada en la dirección dada bloquea una victoria del oponente
+        let consecutiveCount = 0;
+        for (let i = 0; i < k; i++) {
+            if (direction === 'horizontal' && board[row][col + i] === playerColor) {
+                consecutiveCount++;
+            }
+            if (direction === 'vertical' && board[row + i][col] === playerColor) {
+                consecutiveCount++;
+            }
+            if (direction === 'diagonal-descendente' && board[row + i][col + i] === playerColor) {
+                consecutiveCount++;
+            }
+            if (direction === 'diagonal-ascendente' && board[row - i][col + i] === playerColor) {
+                consecutiveCount++;
+            }
+        }
+        return consecutiveCount === k - 1; // La jugada bloquea una victoria si hay k-1 piezas del jugador en línea
+    }
+    
+
+    evaluateControlCenter(board, color) {
+        const playerColor = color;
+        const centerX = Math.floor(board.length / 2);
+        const centerY = Math.floor(board[0].length / 2);
+        const centerValue = 0.1; // Puntuación para controlar el centro
+    
+        if (board[centerX][centerY] === playerColor) {
+            return centerValue;
+        }
+        return 0;
+    }
+
+    evaluateCornerOccupation(board, color) {
+        const playerColor = color;
+        const cornerValue = 0.2; // Puntuación por ocupar una esquina
+        const corners = [
+            [0, 0], [0, board[0].length - 1],
+            [board.length - 1, 0], [board.length - 1, board[0].length - 1]
+        ];
+    
+        let playerScore = 0;
+        for (const [x, y] of corners) {
+            if (board[x][y] === playerColor) {
+                playerScore += cornerValue;
+            }
+        }
         return playerScore;
     }
 
