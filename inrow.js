@@ -164,8 +164,8 @@ class realTamaero extends Agent {
             return this.evaluate(board, k);
         }
 
-        let bestMove = availableMoves[0]; // Inicializamos con el primer movimiento
-        let bestScore = maximizing ? -Infinity : Infinity; // Inicializamos según si estamos maximizando o minimizando
+        let bestMove = availableMoves[0]; 
+        let bestScore = maximizing ? -Infinity : Infinity; 
 
         for (const move of availableMoves) {
             const newBoard = this.board.clone(board);
@@ -195,10 +195,10 @@ class realTamaero extends Agent {
         let playerScore = 0;
         let opponentScore = 0;
     
-        playerScore += this.connectKInLine(board, playerColor, k);
 
         // Evaluar la cantidad de fichas en línea para el jugador y el oponente
         playerScore += this.countConsecutivePieces(board, playerColor, k);
+        playerScore += this.connectKInLine(board, playerColor, k);
         opponentScore += this.countConsecutivePieces(board, opponentColor, k);
     
         // Evaluar el bloqueo del oponente
@@ -226,8 +226,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1;
                 }
             }
         }
@@ -245,8 +244,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -264,8 +262,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -283,8 +280,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -306,7 +302,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount === k) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -321,7 +317,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount === k) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -336,7 +332,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount === k) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -351,7 +347,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount === k) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -376,7 +372,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -394,7 +390,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1;
                 }
             }
         }
@@ -412,7 +408,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
@@ -430,7 +426,7 @@ class realTamaero extends Agent {
                     }
                 }
                 if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                    playerScore += 1; 
                 }
             }
         }
