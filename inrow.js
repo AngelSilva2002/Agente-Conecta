@@ -144,7 +144,7 @@ class RandomPlayer extends Agent{
     }
 }
 
-class realTamaero extends Agent {
+class realTamalero extends Agent {
     constructor() {
         super();
         this.board = new Board();
@@ -215,21 +215,19 @@ class realTamaero extends Agent {
         playerScore += this.countConsecutivePieces(board, playerColor, k);
         playerScore += this.connectKInLine(board, playerColor, k);
         opponentScore += this.countConsecutivePieces(board, opponentColor, k);
+        opponentScore += this.connectKInLine(board, opponentColor, k);
     
         // Evaluar el bloqueo del oponente
         playerScore += this.blockOpponent(board,playerColor, opponentColor, k);
         //opponentScore += this.blockOpponent(board,opponentColor, playerColor, k);
     
-        // Devolver la diferencia en puntuaciones como la evaluación
-        //console.log("score player = " + playerScore)
-        //console.log("score opponent = " + opponentScore)
+        
 
         playerScore += this.evaluateControlCenter(board, playerColor);
-        playerScore += this.evaluateCornerOccupation(board, playerColor);
 
         opponentScore += this.evaluateControlCenter(board, opponentColor);
-        opponentScore += this.evaluateCornerOccupation(board,   opponentColor);
 
+        // Devolver la diferencia en puntuaciones como la evaluación
         
         return playerScore - opponentScore;
     }
@@ -380,86 +378,6 @@ class realTamaero extends Agent {
     
         return playerScore;
     }
-    
-    /*
-    // Función para evaluar el bloqueo del oponente
-    blockOpponent(board, opponentColor, k) {
-        let playerScore = 0;
-    
-        // Evaluar líneas horizontales
-        for (let row = 0; row < this.size; row++) {
-            for (let col = 0; col <= this.size - k; col++) {
-                let consecutiveCount = 0;
-                let emptyCount = 0;
-                for (let i = 0; i < k; i++) {
-                    if (board[row][col + i] === opponentColor) {
-                        consecutiveCount++;
-                    } else if (board[row][col + i] === ' ') {
-                        emptyCount++;
-                    }
-                }
-                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 10; 
-                }
-            }
-        }
-    
-        // Evaluar líneas verticales
-        for (let col = 0; col < this.size; col++) {
-            for (let row = 0; row <= this.size - k; row++) {
-                let consecutiveCount = 0;
-                let emptyCount = 0;
-                for (let i = 0; i < k; i++) {
-                    if (board[row + i][col] === opponentColor) {
-                        consecutiveCount++;
-                    } else if (board[row + i][col] === ' ') {
-                        emptyCount++;
-                    }
-                }
-                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 10;
-                }
-            }
-        }
-    
-        // Evaluar líneas diagonales descendentes
-        for (let row = 0; row <= this.size - k; row++) {
-            for (let col = 0; col <= this.size - k; col++) {
-                let consecutiveCount = 0;
-                let emptyCount = 0;
-                for (let i = 0; i < k; i++) {
-                    if (board[row + i][col + i] === opponentColor) {
-                        consecutiveCount++;
-                    } else if (board[row + i][col + i] === ' ') {
-                        emptyCount++;
-                    }
-                }
-                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 10; 
-                }
-            }
-        }
-    
-        // Evaluar líneas diagonales ascendentes
-        for (let row = k - 1; row < this.size; row++) {
-            for (let col = 0; col <= this.size - k; col++) {
-                let consecutiveCount = 0;
-                let emptyCount = 0;
-                for (let i = 0; i < k; i++) {
-                    if (board[row - i][col + i] === opponentColor) {
-                        consecutiveCount++;
-                    } else if (board[row - i][col + i] === ' ') {
-                        emptyCount++;
-                    }
-                }
-                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
-                    playerScore += 10; 
-                }
-            }
-        }
-    
-        return playerScore;
-    }*/
 
     blockOpponent(board, playerColor, opponentColor, k) {
         let playerScore = 0;
@@ -582,23 +500,6 @@ class realTamaero extends Agent {
             return centerValue;
         }
         return 0;
-    }
-
-    evaluateCornerOccupation(board, color) {
-        const playerColor = color;
-        const cornerValue = 0.2; // Puntuación por ocupar una esquina
-        const corners = [
-            [0, 0], [0, board[0].length - 1],
-            [board.length - 1, 0], [board.length - 1, board[0].length - 1]
-        ];
-    
-        let playerScore = 0;
-        for (const [x, y] of corners) {
-            if (board[x][y] === playerColor) {
-                playerScore += cornerValue;
-            }
-        }
-        return playerScore;
     }
 
     opponentColor() {
