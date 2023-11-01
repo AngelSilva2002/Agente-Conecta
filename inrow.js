@@ -151,82 +151,136 @@ class realTamaero extends Agent {
 
     compute(board, time) {
         const moves = this.board.valid_moves(board);
-        const bestMove = this.minimax(board, 4, true); // Profundidad máxima de búsqueda 4
-        console.log(this.color + ',' + bestMove);
+        let bestMove = -1;
+        let bestScore = -Infinity;
+        const depth = 3; // Profundidad máxima de búsqueda
+
+        for (const move of moves) {
+            const clonedBoard = this.board.clone(board);
+            this.board.move(clonedBoard, move, this.color);
+            const score = this.minimax(clonedBoard, depth, -Infinity, Infinity, false);
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMove = move;
+            }
+        }
+
         return bestMove;
     }
 
-    minimax(board, depth, isMaximizing) {
-        const availableMoves = this.board.valid_moves(board);
-        if (depth === 0 || availableMoves.length === 0) {
-            // Evaluar el estado actual del tablero
+    // Modifica el algoritmo minimax para elegir el mejor movimiento en función del puntaje
+    minimax(board, depth, alpha, beta, maximizingPlayer) {
+        console.log("boar winner",this.board.winner(board, this.size))
+        if (depth === 0 || this.board.winner(board, this.size) !== ' ') {
             return this.evaluate(board);
         }
 
-        if (isMaximizing) {
-            let bestScore = -Infinity;
-            let bestMove = availableMoves[0];
-            for (const move of availableMoves) {
-                const newBoard = this.board.clone(board);
-                this.board.move(newBoard, move, this.color);
-                const score = this.minimax(newBoard, depth - 1, false);
-                if (score > bestScore) {
-                    bestScore = score;
+        const moves = this.board.valid_moves(board);
+
+        if (maximizingPlayer) {
+            let maxScore = -Infinity;
+            let bestMove = null;
+
+            for (const move of moves) {
+                const clonedBoard = this.board.clone(board);
+                this.board.move(clonedBoard, move, this.color);
+                const score = this.minimax(clonedBoard, depth - 1, alpha, beta, false);
+
+                if (score > maxScore) {
+                    maxScore = score;
                     bestMove = move;
                 }
+
+                alpha = Math.max(alpha, score);
+
+                if (beta <= alpha) {
+                    break;
+                }
             }
-            return bestMove;
+
+            // Si es el nodo raíz, devuelve el mejor movimiento
+            if (depth === 3) {
+                return bestMove;
+            }
+
+            return maxScore;
         } else {
-            let bestScore = Infinity;
-            for (const move of availableMoves) {
-                const newBoard = this.board.clone(board);
-                this.board.move(newBoard, move, this.opponentColor());
-                const score = this.minimax(newBoard, depth - 1, true);
-                bestScore = Math.min(bestScore, score);
+            let minScore = Infinity;
+
+            for (const move of moves) {
+                const clonedBoard = this.board.clone(board);
+                this.board.move(clonedBoard, move, this.color === 'B' ? 'W' : 'B');
+                const score = this.minimax(clonedBoard, depth - 1, alpha, beta, true);
+                minScore = Math.min(minScore, score);
+                beta = Math.min(beta, score);
+
+                if (beta <= alpha) {
+                    break;
+                }
             }
-            return bestScore;
+
+            return minScore;
         }
     }
 
     evaluate(board) {
-        const playerColor = this.color;
-        const opponentColor = this.opponentColor();
+        const ownColor = this.color;
+        const opponentColor = ownColor === 'B' ? 'W' : 'B';
+        const size = this.size;
+        var k = parseInt(Konekti.vc('k').value) // k-pieces in row
+        let score = 0;
     
-        let playerScore = 0;
-        let opponentScore = 0;
+        // Criterios de evaluación
+        const criteria = {
+            'OwnPiecesInLine': [0, 1, 10, 100, 1000],    // Valor para fichas propias en línea
+            'OpponentPiecesInLine': [0, -1, -10, -100, -1000],  // Valor para fichas del oponente en línea
+            'EmptySpace': [0, 0, 0, 0, 0]  // Valor para espacios vacíos
+        };
     
-        // Evaluate the board by counting pieces and their positions
-        for (let i = 0; i < this.size; i++) {
-            for (let j = 0; j < this.size; j++) {
-                const cell = board[i][j];
-                if (cell === playerColor) {
-                    playerScore += this.evaluateCell(i, j, playerColor);
-                } else if (cell === opponentColor) {
-                    opponentScore += this.evaluateCell(i, j, opponentColor);
+        // Función para calcular la puntuación en una dirección dada
+        function calculateDirectionScore(row, col, dr, dc, color) {
+            let ownCount = 0;
+            let opponentCount = 0;
+    
+            for (let i = 0; i < k; i++) {
+                const r = row + i * dr;
+                const c = col + i * dc;
+    
+                if (r < 0 || r >= size || c < 0 || c >= size) {
+                    break;
+                }
+    
+                if (board[r][c] === ownColor) {
+                    ownCount++;
+                } else if (board[r][c] === opponentColor) {
+                    opponentCount++;
+                }
+            }
+    
+            // Calcula la puntuación en función de los criterios
+            return criteria['OwnPiecesInLine'][ownCount] +
+                criteria['OpponentPiecesInLine'][opponentCount] +
+                criteria['EmptySpace'][ownCount + opponentCount];
+        }
+    
+        // Calcular la puntuación en todas las direcciones posibles
+        for (let row = 0; row < size; row++) {
+            for (let col = 0; col < size; col++) {
+                for (const [dr, dc] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+                    score += calculateDirectionScore(row, col, dr, dc, ownColor);
+                    score -= calculateDirectionScore(row, col, dr, dc, opponentColor);
                 }
             }
         }
-    
-        // Return the difference in scores as the evaluation
-        return playerScore - opponentScore;
+        console.log('puntaje:', score);
+        return score;
     }
     
-    evaluateCell(row, col, color) {
-        // Example: Assign higher values to center positions
-        const centerRow = Math.floor(this.size / 2);
-        const centerCol = Math.floor(this.size / 2);
     
-        // Calculate a simple score based on the distance from the center
-        const distance = Math.abs(row - centerRow) + Math.abs(col - centerCol);
-    
-        // Assign a higher score to pieces closer to the center
-        return color === this.color ? distance : -distance;
-    }
-
-    opponentColor() {
-        return this.color === 'B' ? 'W' : 'B';
-    }
 }
+
+
 
 /*
  * Environment (Cannot be modified or any of its attributes accesed directly)
