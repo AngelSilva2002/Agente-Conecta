@@ -1,3 +1,4 @@
+
 class Agent{
     constructor(){}
     
@@ -147,51 +148,294 @@ class realTamaero extends Agent {
     constructor() {
         super();
         this.board = new Board();
+        this.size = this.board.size;
     }
 
     compute(board, time) {
+        const k = parseInt(Konekti.vc('k').value);
         const moves = this.board.valid_moves(board);
-        const bestMove = this.minimax(board, 4, true); // Profundidad máxima de búsqueda 4
-        console.log(this.color + ',' + bestMove);
+        const bestMove = this.minimax(board, 4, true, k);
         return bestMove;
     }
 
-    minimax(board, depth, isMaximizing) {
+    minimax(board, depth, maximizing, k) {
         const availableMoves = this.board.valid_moves(board);
         if (depth === 0 || availableMoves.length === 0) {
-            // Evaluar el estado actual del tablero
-            return this.evaluate(board);
+            return this.evaluate(board, k);
         }
 
-        if (isMaximizing) {
-            let bestScore = -Infinity;
-            let bestMove = availableMoves[0];
-            for (const move of availableMoves) {
-                const newBoard = this.board.clone(board);
+        let bestMove = availableMoves[0]; // Inicializamos con el primer movimiento
+        let bestScore = maximizing ? -Infinity : Infinity; // Inicializamos según si estamos maximizando o minimizando
+
+        for (const move of availableMoves) {
+            const newBoard = this.board.clone(board);
+
+            if (maximizing) {
                 this.board.move(newBoard, move, this.color);
-                const score = this.minimax(newBoard, depth - 1, false);
-                if (score > bestScore) {
-                    bestScore = score;
-                    bestMove = move;
-                }
-            }
-            return bestMove;
-        } else {
-            let bestScore = Infinity;
-            for (const move of availableMoves) {
-                const newBoard = this.board.clone(board);
+            } else {
                 this.board.move(newBoard, move, this.opponentColor());
-                const score = this.minimax(newBoard, depth - 1, true);
-                bestScore = Math.min(bestScore, score);
             }
-            return bestScore;
+
+            const score = this.minimax(newBoard, depth - 1, !maximizing, k);
+
+            if ((maximizing && score > bestScore) || (!maximizing && score < bestScore)) {
+                bestScore = score;
+                bestMove = move;
+            }
         }
+
+        return bestMove;
     }
 
     evaluate(board) {
-        // Evaluar el tablero aquí (implementar una función de evaluación adecuada)
-        // Devuelve un valor más alto si es un estado favorable para el jugador y un valor más bajo si es desfavorable.
-        return 0; // Implementa tu evaluación aquí
+        var k = parseInt(Konekti.vc('k').value) // k-pieces in row
+        console.log("piesas: " + k)
+        const playerColor = this.color;
+        const opponentColor = this.opponentColor();
+        let playerScore = 0;
+        let opponentScore = 0;
+    
+        playerScore += this.connectKInLine(board, playerColor, k);
+
+        // Evaluar la cantidad de fichas en línea para el jugador y el oponente
+        playerScore += this.countConsecutivePieces(board, playerColor, k);
+        opponentScore += this.countConsecutivePieces(board, opponentColor, k);
+    
+        // Evaluar el bloqueo del oponente
+        playerScore += this.blockOpponent(board, opponentColor, k);
+    
+        // Devolver la diferencia en puntuaciones como la evaluación
+        //console.log("score player = " + playerScore)
+        //console.log("score opponent = " + opponentScore)
+        return playerScore - opponentScore;
+    }
+
+    connectKInLine(board, playerColor, k) {
+        let playerScore = 0;
+    
+        // Evaluar líneas horizontales
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row][col + i] === playerColor) {
+                        consecutiveCount++;
+                    } else if (board[row][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas verticales
+        for (let col = 0; col < this.size; col++) {
+            for (let row = 0; row <= this.size - k; row++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col] === playerColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales descendentes
+        for (let row = 0; row <= this.size - k; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col + i] === playerColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales ascendentes
+        for (let row = k - 1; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row - i][col + i] === playerColor) {
+                        consecutiveCount++;
+                    } else if (board[row - i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    // Aumenta la puntuación si es posible conectar "k" fichas en línea en esta línea
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        return playerScore;
+    }
+    
+    
+    countConsecutivePieces(board, playerColor, k) {
+        let playerScore = 0;
+    
+        // Evaluar líneas horizontales
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row][col + i] === playerColor) {
+                        consecutiveCount++;
+                    }
+                }
+                if (consecutiveCount === k) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas verticales
+        for (let col = 0; col < this.size; col++) {
+            for (let row = 0; row <= this.size - k; row++) {
+                let consecutiveCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col] === playerColor) {
+                        consecutiveCount++;
+                    }
+                }
+                if (consecutiveCount === k) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales descendentes
+        for (let row = 0; row <= this.size - k; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col + i] === playerColor) {
+                        consecutiveCount++;
+                    }
+                }
+                if (consecutiveCount === k) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales ascendentes
+        for (let row = k - 1; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row - i][col + i] === playerColor) {
+                        consecutiveCount++;
+                    }
+                }
+                if (consecutiveCount === k) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        return playerScore;
+    }
+    
+    // Función para evaluar el bloqueo del oponente
+    blockOpponent(board, opponentColor, k) {
+        let playerScore = 0;
+    
+        // Evaluar líneas horizontales
+        for (let row = 0; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas verticales
+        for (let col = 0; col < this.size; col++) {
+            for (let row = 0; row <= this.size - k; row++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales descendentes
+        for (let row = 0; row <= this.size - k; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row + i][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row + i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        // Evaluar líneas diagonales ascendentes
+        for (let row = k - 1; row < this.size; row++) {
+            for (let col = 0; col <= this.size - k; col++) {
+                let consecutiveCount = 0;
+                let emptyCount = 0;
+                for (let i = 0; i < k; i++) {
+                    if (board[row - i][col + i] === opponentColor) {
+                        consecutiveCount++;
+                    } else if (board[row - i][col + i] === ' ') {
+                        emptyCount++;
+                    }
+                }
+                if (consecutiveCount + emptyCount === k && emptyCount > 0) {
+                    playerScore += 1; // Puedes ajustar esta puntuación según tu estrategia
+                }
+            }
+        }
+    
+        return playerScore;
     }
 
     opponentColor() {
@@ -206,6 +450,7 @@ class Environment extends MainClient{
 	constructor(){ 
         super()
         this.board = new Board()
+        
     }
 
     setPlayers(players){ this.players = players }
